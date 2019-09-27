@@ -1,0 +1,308 @@
+version: '3.5'
+services:
+ zookeeper-1:
+    image: confluentinc/cp-zookeeper
+    container_name: zk-1
+    ports:
+      - "2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 10
+      ZOOKEEPER_SYNC_LIMIT: 5
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+
+ zookeeper-2:
+    image: confluentinc/cp-zookeeper
+    container_name: zk-2
+    ports:
+      - "2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 10
+      ZOOKEEPER_SYNC_LIMIT: 5
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+ zookeeper-3:
+    image: confluentinc/cp-zookeeper
+    container_name: zk-3
+    ports:
+      - "2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 10
+      ZOOKEEPER_SYNC_LIMIT: 5
+      ZOOKEEPER_CLIENT_PORT: 2181
+ 
+ #####  kafka broker ######
+
+ broker-1:
+    image: confluentinc/cp-enterprise-kafka
+    container_name: bk-1
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    ports:
+      - "9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://broker-1:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:9092
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_NUM_PARTITION: 8
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 3
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181'
+      KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
+      KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+
+ broker-2:
+    image: confluentinc/cp-enterprise-kafka
+    container_name: bk-2
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    ports:
+      - "9092"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_LISTENERS: PLAINTEXT://broker-2:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-2:9092
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_NUM_PARTITION: 8
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 3
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181'
+      KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
+      KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+
+ broker-3:
+    image: confluentinc/cp-enterprise-kafka
+    container_name: bk-3
+    depends_on:
+      - zookeeper-1
+      - zookeeper-2
+      - zookeeper-3
+    ports:
+      - "9092"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_LISTENERS: PLAINTEXT://broker-3:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-3:9092
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_NUM_PARTITION: 8
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 3
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181'
+      KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
+      KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+
+#### Schema Registry #######
+
+ schema-registry:
+      image: confluentinc/cp-schema-registry
+      container_name: schema-registry
+      depends_on:
+        - broker-1
+        - broker-2
+        - broker-3
+
+      ports:
+        - "8081:8081"
+      environment:
+        SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zk-1:2181,zk-2:2181,zk-3:2181'
+        SCHEMA_REGISTRY_KAFKASTORE_TOPICS: schemas_topic
+        SCHEMA_REGISTRY_DEBUG: 'true'
+        SCHEMA_REGISTRY_HOST_NAME: schema-registry
+
+ #### REST PROXY ######
+
+ rest-proxy:
+    image: confluentinc/cp-kafka-rest
+    container_name: rest-proxy
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+
+    environment:
+      KAFKA_REST_ID: kafka-rest-server
+      KAFKA_REST_HOST_NAME: 
+      KAFKA_REST_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      KAFKA_REST_HOST_NAME: rest-proxy
+ 
+ #### Kafka Connect ####    
+ connect:
+     image: confluentinc/cp-kafka-connect
+     container_name: connect
+     ports:
+      - "8083:8083"
+     depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+
+     environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      CONNECT_GROUP_ID: connect-cluster
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: connect-statuses
+      CONNECT_KEY_CONVERTER: 'io.confluent.connect.avro.AvroConverter'
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_VALUE_CONVERTER: 'io.confluent.connect.avro.AvroConverter'
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_INTERNAL_KEY_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_VALUE_CONVERTER: 'org.apache.kafka.connect.json.JsonConverter'
+      CONNECT_INTERNAL_KEY_CONVERTER_SCHEMAS_ENABLE: 'false'
+      CONNECT_INTERNAL_VALUE_CONVERTER_SCHEMA_ENABLE: 'false'
+      CONNECT_REST_ADVERTISED_HOST_NAME: rest-proxy
+      CONNECT_REST_ADVERTISED_PORT: 8082
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor
+      CONNECT_PLUGIN_PATH: '/usr/share/java' # needs volume mount / binding  here.
+
+
+### KSQL SERVER ####
+ ksql-server:
+    image: confluentinc/cp-ksql-server
+    container_name: ksql-server
+    ports:
+      - "8088:8088"
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+
+    environment:
+       KSQL_LISTENERS: "http://0.0.0.0:8088"
+       KSQL_BOOTSTRAP_SERVERS: 'broker-1:9092,broker-2:9092,broker-3:9092'
+       KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+       KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+       KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+       KSQL_HOST_NAME: ksql-server
+
+
+
+#### KSQL CLI ######
+# Run Following Command from terminal
+# : docker-compose exec ksql-cli ksql http://ksql-server:8088
+
+ ksql-cli:
+    image: confluentinc/cp-ksql-cli:5.1.2
+    container_name: ksql-cli
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+      - connect
+      - ksql-server
+    entrypoint: /bin/sh
+    tty: true
+
+### control center #####
+ control-center:
+      image: confluentinc/cp-enterprise-control-center
+      container_name: control-center
+      depends_on:
+        - broker-1
+        - broker-2
+        - broker-3
+      ports:
+        - "9021:9021"
+      environment:
+        CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker-1:9092,broker-2:9092,broker-3:9092'
+        CONTROL_CENTER_KSQL_URL: http://ksql-server:8088
+        CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
+        CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+        CONTROL_CENTER_REPLICATION_FACTOR:  3
+        CONTROL_CENTER_CONNECT_CLUSTER: http://connect:8083
+ 
+ ### postgres ### 
+ postgresql:
+    image: postgres
+    container_name: postgres
+    ports:
+       - 5435:5435
+    volumes:
+         - pgdata:/var/lib/postgresql/data 
+    environment: 
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+
+ kibana:
+   image: docker.elastic.co/kibana/kibana:6.6.2
+   container_name: kibana
+   environment: 
+    SERVER_NAME: localhost
+    ELASTICSEARCH_URL: http://elasticsearch:9200/
+   ports:
+    - 5601:5601
+   ulimits:
+      nproc: 65535
+      memlock:
+        soft: -1
+        hard: -1
+   cap_add:
+      - ALL
+   deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+ elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+    container_name: elasticsearch
+    environment:
+      - node.name=es01
+      - bootstrap.memory_lock=true
+      # - vm.max_map_count=262144
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ulimits:
+      nproc: 65535
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - ALL
+    privileged: true
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+volumes:
+  esdata1:
+  pgdata:
