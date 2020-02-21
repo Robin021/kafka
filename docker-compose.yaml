@@ -11,7 +11,10 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_INIT_LIMIT: 10
       ZOOKEEPER_SYNC_LIMIT: 5
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: 22181
+    volumes:
+      - ./zk-persistent-data/zoo1/data:/var/lib/zookeeper/data
+      - ./zk-persistent-data/zoo1/datalog:/var/lib/zookeeper/log
 
 
  zookeeper-2:
@@ -25,21 +28,31 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_INIT_LIMIT: 10
       ZOOKEEPER_SYNC_LIMIT: 5
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: 32181
+    volumes:
+      - ./zk-persistent-data/zoo2/data:/var/lib/zookeeper/data
+      - ./zk-persistent-data/zoo2/datalog:/var/lib/zookeeper/log
+        
+
 
  zookeeper-3:
-    image: confluentinc/cp-zookeeper
-    container_name: zk-3
-    ports:
-      - "2181"
-    environment:
-      ZOOKEEPER_SERVER_ID: 3
-      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_INIT_LIMIT: 10
-      ZOOKEEPER_SYNC_LIMIT: 5
-      ZOOKEEPER_CLIENT_PORT: 2181
+   image: confluentinc/cp-zookeeper
+   container_name: zk-3
+   ports:
+     - "2181"
+   environment:
+     ZOOKEEPER_SERVER_ID: 3
+     ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
+     ZOOKEEPER_TICK_TIME: 2000
+     ZOOKEEPER_INIT_LIMIT: 10
+     ZOOKEEPER_SYNC_LIMIT: 5
+     ZOOKEEPER_CLIENT_PORT: 2181
+   volumes:
+     - ./zk-persistent-data/zoo3/data:/var/lib/zookeeper/data
+     - ./zk-persistent-data/zoo3/datalog:/var/lib/zookeeper/log
+
  
+
  #####  kafka broker ######
 
  broker-1:
@@ -54,18 +67,20 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_LISTENERS: PLAINTEXT://broker-1:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:19092
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_NUM_PARTITION: 8
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 3
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:22181,zookeeper-2:32181,zookeeper-3:42181'
       KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
       KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    volumes:
+      - ./kafka-persistent-data/kafka1/data:/var/lib/kafka/data
 
  broker-2:
     image: confluentinc/cp-enterprise-kafka
@@ -79,18 +94,20 @@ services:
     environment:
       KAFKA_BROKER_ID: 2
       KAFKA_LISTENERS: PLAINTEXT://broker-2:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-2:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-2:29092
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_NUM_PARTITION: 8
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 3
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:22181,zookeeper-2:32181,zookeeper-3:42181'
       KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
       KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    volumes:
+      - ./kafka-persistent-data/kafka2/data:/var/lib/kafka/data
 
  broker-3:
     image: confluentinc/cp-enterprise-kafka
@@ -104,18 +121,20 @@ services:
     environment:
       KAFKA_BROKER_ID: 3
       KAFKA_LISTENERS: PLAINTEXT://broker-3:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-3:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-3:39092
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_NUM_PARTITION: 8
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 3
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181'
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:22181,zookeeper-2:32181,zookeeper-3:42181'
       KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
       KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    volumes:
+      - ./kafka-persistent-data/kafka3/data:/var/lib/kafka/data
 
 #### Schema Registry #######
 
