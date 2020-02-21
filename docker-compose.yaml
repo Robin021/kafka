@@ -2,57 +2,53 @@ version: '3.5'
 services:
  zookeeper-1:
     image: confluentinc/cp-zookeeper
-    container_name: zk-1
-    ports:
-      - "2181"
     environment:
       ZOOKEEPER_SERVER_ID: 1
-      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
+      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_INIT_LIMIT: 10
       ZOOKEEPER_SYNC_LIMIT: 5
       ZOOKEEPER_CLIENT_PORT: 22181
+    network_mode: host
+    extra_hosts:
+      - "clusternode1:127.0.0.1"    
     volumes:
       - ./zk-persistent-data/zoo1/data:/var/lib/zookeeper/data
       - ./zk-persistent-data/zoo1/datalog:/var/lib/zookeeper/log
 
-
  zookeeper-2:
     image: confluentinc/cp-zookeeper
-    container_name: zk-2
-    ports:
-      - "2181"
     environment:
       ZOOKEEPER_SERVER_ID: 2
-      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
+      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_INIT_LIMIT: 10
       ZOOKEEPER_SYNC_LIMIT: 5
       ZOOKEEPER_CLIENT_PORT: 32181
+    network_mode: host
+    extra_hosts:
+      - "clusternode1:127.0.0.1"    
     volumes:
       - ./zk-persistent-data/zoo2/data:/var/lib/zookeeper/data
-      - ./zk-persistent-data/zoo2/datalog:/var/lib/zookeeper/log
-        
-
+      - ./zk-persistent-data/zoo2/datalog:/var/lib/zookeeper/log      
 
  zookeeper-3:
-   image: confluentinc/cp-zookeeper
-   container_name: zk-3
-   ports:
-     - "2181"
-   environment:
-     ZOOKEEPER_SERVER_ID: 3
-     ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:2888:3888;zookeeper-3:2888:3888
-     ZOOKEEPER_TICK_TIME: 2000
-     ZOOKEEPER_INIT_LIMIT: 10
-     ZOOKEEPER_SYNC_LIMIT: 5
-     ZOOKEEPER_CLIENT_PORT: 42181
-   volumes:
-     - ./zk-persistent-data/zoo3/data:/var/lib/zookeeper/data
-     - ./zk-persistent-data/zoo3/datalog:/var/lib/zookeeper/log
+    image: confluentinc/cp-zookeeper
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_SERVERS: localhost:22888:23888;localhost:32888:33888;localhost:42888:43888
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 10
+      ZOOKEEPER_SYNC_LIMIT: 5
+      ZOOKEEPER_CLIENT_PORT: 42181
+    network_mode: host
+    extra_hosts:
+      - "clusternode1:127.0.0.1"    
+    volumes:
+      - ./zk-persistent-data/zoo3/data:/var/lib/zookeeper/data
+      - ./zk-persistent-data/zoo3/datalog:/var/lib/zookeeper/log 
 
- 
-
+    
  #####  kafka broker ######
 
  broker-1:
@@ -63,22 +59,28 @@ services:
       - zookeeper-2
       - zookeeper-3
     ports:
-      - "9092"
+      - "19092:19092"
+      - "19093:19093"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_LISTENERS: PLAINTEXT://broker-1:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:19092
+      KAFKA_LISTENERS: INSIDE://:19093,OUTSIDE://:19092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:19093,OUTSIDE://52.80.148.160:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_NUM_PARTITION: 8
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 3
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:22181,zookeeper-2:32181,zookeeper-3:42181'
+      KAFKA_ZOOKEEPER_CONNECT: 'localhost:22181,localhost:32181,localhost:42181'
       KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
       KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://localhost:19092,PLAINTEXT://localhost:29092,PLAINTEXT://localhost:39092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    network_mode: host
+    extra_hosts:
+      - "clusternode1:127.0.0.1"       
     volumes:
       - ./kafka-persistent-data/kafka1/data:/var/lib/kafka/data
       - ./kafka-persistent-data/kafka1/config:/etc/kafka
@@ -91,22 +93,28 @@ services:
       - zookeeper-2
       - zookeeper-3
     ports:
-      - "9092"
+      - "29092:29092"
+      - "29093:29093"
     environment:
       KAFKA_BROKER_ID: 2
-      KAFKA_LISTENERS: PLAINTEXT://broker-2:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-2:29092
+      KAFKA_LISTENERS: INSIDE://:29093,OUTSIDE://:29092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:29093,OUTSIDE://52.80.148.160:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_NUM_PARTITION: 8
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 3
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:22181,zookeeper-2:32181,zookeeper-3:42181'
+      KAFKA_ZOOKEEPER_CONNECT: 'localhost:22181,localhost:32181,localhost:42181'
       KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
       KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://localhost:19092,PLAINTEXT://localhost:29092,PLAINTEXT://localhost:39092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    network_mode: host
+    extra_hosts:
+      - "clusternode1:127.0.0.1"          
     volumes:
       - ./kafka-persistent-data/kafka2/data:/var/lib/kafka/data
       - ./kafka-persistent-data/kafka2/config:/etc/kafka
@@ -119,25 +127,32 @@ services:
       - zookeeper-2
       - zookeeper-3
     ports:
-      - "9092"
+      - "39092:39092"
+      - "39093:39093"
     environment:
       KAFKA_BROKER_ID: 3
-      KAFKA_LISTENERS: PLAINTEXT://broker-3:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-3:39092
+      KAFKA_LISTENERS: INSIDE://:39093,OUTSIDE://:39092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:39093,OUTSIDE://52.80.148.160:39092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_NUM_PARTITION: 8
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 3
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 30000
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-1:22181,zookeeper-2:32181,zookeeper-3:42181'
+      KAFKA_ZOOKEEPER_CONNECT: 'localhost:22181,localhost:32181,localhost:42181'
       KAFKA_ZOOKEEPER_CONNECT_TIMEOUT_MS: 6000
       KAFKA_AUTO_CREATE_TOPIC_ENABLE: 'true'
       KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: 'PLAINTEXT://localhost:19092,PLAINTEXT://localhost:29092,PLAINTEXT://localhost:39092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    network_mode: host
+    extra_hosts:
+      - "clusternode1:127.0.0.1"          
     volumes:
       - ./kafka-persistent-data/kafka3/data:/var/lib/kafka/data
       - ./kafka-persistent-data/kafka3/config:/etc/kafka
+
 
 #### Schema Registry #######
 
@@ -152,11 +167,13 @@ services:
       ports:
         - "8081:8081"
       environment:
-        SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zk-1:2181,zk-2:2181,zk-3:2181'
+        SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'localhost:22181,localhost:32181,localhost:42181'
         SCHEMA_REGISTRY_KAFKASTORE_TOPICS: schemas_topic
         SCHEMA_REGISTRY_DEBUG: 'true'
         SCHEMA_REGISTRY_HOST_NAME: schema-registry
-
+      network_mode: host
+      extra_hosts:
+       - "clusternode1:127.0.0.1" 
  #### REST PROXY ######
 
  rest-proxy:
@@ -171,9 +188,11 @@ services:
       KAFKA_REST_ID: kafka-rest-server
       KAFKA_REST_HOST_NAME: 
       KAFKA_REST_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      KAFKA_REST_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'PLAINTEXT://localhost:19092,PLAINTEXT://localhost:29092,PLAINTEXT://localhost:39092'
       KAFKA_REST_HOST_NAME: rest-proxy
- 
+    network_mode: host
+    extra_hosts:
+      - "clusternode1:127.0.0.1" 
  #### Kafka Connect ####    
  connect:
      image: confluentinc/cp-kafka-connect
@@ -186,7 +205,7 @@ services:
       - broker-3
 
      environment:
-      CONNECT_BOOTSTRAP_SERVERS: 'PLAINTEXT://broker-1:9092,PLAINTEXT://broker-2:9092,PLAINTEXT://broker-3:9092'
+      CONNECT_BOOTSTRAP_SERVERS: 'PLAINTEXT://localhost:19092,PLAINTEXT://localhost:29092,PLAINTEXT://localhost:39092'
       CONNECT_GROUP_ID: connect-cluster
       CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
       CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
@@ -204,7 +223,9 @@ services:
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor
       CONNECT_PLUGIN_PATH: '/usr/share/java' # needs volume mount / binding  here.
-
+     network_mode: host
+     extra_hosts:
+      - "clusternode1:127.0.0.1" 
 
 ### KSQL SERVER ####
  ksql-server:
@@ -219,12 +240,14 @@ services:
 
     environment:
        KSQL_LISTENERS: "http://0.0.0.0:8088"
-       KSQL_BOOTSTRAP_SERVERS: 'broker-1:9092,broker-2:9092,broker-3:9092'
+       KSQL_BOOTSTRAP_SERVERS: 'localhost:19092,localhost:29092,localhost:39092'
        KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
        KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
        KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
        KSQL_HOST_NAME: ksql-server
-
+    network_mode: host
+    extra_hosts:
+     - "clusternode1:127.0.0.1" 
 
 
 #### KSQL CLI ######
@@ -254,77 +277,80 @@ services:
       ports:
         - "9021:9021"
       environment:
-        CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker-1:9092,broker-2:9092,broker-3:9092'
+        CONTROL_CENTER_BOOTSTRAP_SERVERS: 'localhost:19092,localhost:29092,localhost:39092'
         CONTROL_CENTER_KSQL_URL: http://ksql-server:8088
         CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
         CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
         CONTROL_CENTER_REPLICATION_FACTOR:  3
         CONTROL_CENTER_CONNECT_CLUSTER: http://connect:8083
- 
+      network_mode: host
+      extra_hosts:
+        - "clusternode1:127.0.0.1"  
+
  ### postgres ### 
- postgresql:
-    image: postgres
-    container_name: postgres
-    ports:
-       - 5435:5435
-    volumes:
-         - pgdata:/var/lib/postgresql/data 
-    environment: 
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
+#  postgresql:
+#     image: postgres
+#     container_name: postgres
+#     ports:
+#        - 5435:5435
+#     volumes:
+#          - pgdata:/var/lib/postgresql/data 
+#     environment: 
+#       POSTGRES_USER: root
+#       POSTGRES_PASSWORD: root
 
- kibana:
-   image: docker.elastic.co/kibana/kibana:6.6.2
-   container_name: kibana
-   environment: 
-    SERVER_NAME: localhost
-    ELASTICSEARCH_URL: http://elasticsearch:9200/
-   ports:
-    - 5601:5601
-   ulimits:
-      nproc: 65535
-      memlock:
-        soft: -1
-        hard: -1
-   cap_add:
-      - ALL
-   deploy:
-      mode: global
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
+#  kibana:
+#    image: docker.elastic.co/kibana/kibana:6.6.2
+#    container_name: kibana
+#    environment: 
+#     SERVER_NAME: localhost
+#     ELASTICSEARCH_URL: http://elasticsearch:9200/
+#    ports:
+#     - 5601:5601
+#    ulimits:
+#       nproc: 65535
+#       memlock:
+#         soft: -1
+#         hard: -1
+#    cap_add:
+#       - ALL
+#    deploy:
+#       mode: global
+#       restart_policy:
+#         condition: on-failure
+#         delay: 5s
+#         max_attempts: 3
+#         window: 120s
 
- elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.0
-    container_name: elasticsearch
-    environment:
-      - node.name=es01
-      - bootstrap.memory_lock=true
-      # - vm.max_map_count=262144
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-    ulimits:
-      nproc: 65535
-      memlock:
-        soft: -1
-        hard: -1
-    cap_add:
-      - ALL
-    privileged: true
-    deploy:
-      mode: global
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
-    volumes:
-      - esdata1:/usr/share/elasticsearch/data
-    ports:
-      - 9200:9200
-      - 9300:9300
+#  elasticsearch:
+#     image: docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+#     container_name: elasticsearch
+#     environment:
+#       - node.name=es01
+#       - bootstrap.memory_lock=true
+#       # - vm.max_map_count=262144
+#       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+#     ulimits:
+#       nproc: 65535
+#       memlock:
+#         soft: -1
+#         hard: -1
+#     cap_add:
+#       - ALL
+#     privileged: true
+#     deploy:
+#       mode: global
+#       restart_policy:
+#         condition: on-failure
+#         delay: 5s
+#         max_attempts: 3
+#         window: 120s
+#     volumes:
+#       - esdata1:/usr/share/elasticsearch/data
+#     ports:
+#       - 9200:9200
+#       - 9300:9300
 
-volumes:
-  esdata1:
-  pgdata:
+# volumes:
+#   esdata1:
+#   pgdata:
