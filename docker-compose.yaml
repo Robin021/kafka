@@ -46,7 +46,7 @@ services:
      ZOOKEEPER_TICK_TIME: 2000
      ZOOKEEPER_INIT_LIMIT: 10
      ZOOKEEPER_SYNC_LIMIT: 5
-     ZOOKEEPER_CLIENT_PORT: 2181
+     ZOOKEEPER_CLIENT_PORT: 42181
    volumes:
      - ./zk-persistent-data/zoo3/data:/var/lib/zookeeper/data
      - ./zk-persistent-data/zoo3/datalog:/var/lib/zookeeper/log
@@ -81,6 +81,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
     volumes:
       - ./kafka-persistent-data/kafka1/data:/var/lib/kafka/data
+      - ./kafka-persistent-data/kafka1/config:/etc/kafka
 
  broker-2:
     image: confluentinc/cp-enterprise-kafka
@@ -108,6 +109,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
     volumes:
       - ./kafka-persistent-data/kafka2/data:/var/lib/kafka/data
+      - ./kafka-persistent-data/kafka2/config:/etc/kafka
 
  broker-3:
     image: confluentinc/cp-enterprise-kafka
@@ -135,6 +137,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
     volumes:
       - ./kafka-persistent-data/kafka3/data:/var/lib/kafka/data
+      - ./kafka-persistent-data/kafka3/config:/etc/kafka
 
 #### Schema Registry #######
 
